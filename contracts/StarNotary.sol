@@ -1,6 +1,6 @@
 pragma solidity 0.5.17;
 
-import "openzeppelin-solidity/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract StarNotary is ERC721 {
     struct Star {
@@ -10,7 +10,7 @@ contract StarNotary is ERC721 {
     mapping(uint256 => Star) public tokenIdToStarInfo; // this is key!
     mapping(uint256 => uint256) public starsForSale;
 
-    function createStar(string _name, uint256 _tokenId) public {
+    function createStar(string memory _name, uint256 _tokenId) public {
         Star memory newStar = Star(_name);
         tokenIdToStarInfo[_tokenId] = newStar;
         _mint(msg.sender, _tokenId);
@@ -19,6 +19,14 @@ contract StarNotary is ERC721 {
     function putStarUpForSale(uint256 _tokenId, uint256 _price) public {
         require(ownerOf(_tokenId) == msg.sender);
         starsForSale[_tokenId] = _price;
+    }
+
+    function _make_payable(address addr)
+        internal
+        pure
+        returns (address payable)
+    {
+        return address(uint160(addr));
     }
 
     // pay attention to how this works!
@@ -30,8 +38,9 @@ contract StarNotary is ERC721 {
         require(msg.value > starCost, "You need to have enough Ether");
 
         transferFrom(starOwner, msg.sender, _tokenId);
+        address payable payableStarOwner = _make_payable(starOwner);
 
-        starOwner.transfer(starCost);
+        payableStarOwner.transfer(starCost);
 
         if (msg.value > starCost) {
             msg.sender.transfer(msg.value - starCost);
